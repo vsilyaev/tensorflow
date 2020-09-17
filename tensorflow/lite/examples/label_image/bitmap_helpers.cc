@@ -62,7 +62,7 @@ std::vector<uint8_t> decode_bmp(const uint8_t* input, int row_size, int width,
           output[dst_pos + 3] = input[src_pos + 3];
           break;
         default:
-          LOG(FATAL) << "Unexpected number of channels: " << channels;
+          LOG(FATAL) << "Unexpected number of channels: " << channels << std::endl;
           break;
       }
     }
@@ -76,7 +76,7 @@ std::vector<uint8_t> read_bmp(const std::string& input_bmp_name, int* width,
 
   std::ifstream file(input_bmp_name, std::ios::in | std::ios::binary);
   if (!file) {
-    LOG(FATAL) << "input file " << input_bmp_name << " not found\n";
+    LOG(FATAL) << "input file " << input_bmp_name << " not found" << std::endl;
     exit(-1);
   }
 
@@ -85,7 +85,7 @@ std::vector<uint8_t> read_bmp(const std::string& input_bmp_name, int* width,
   end = file.tellg();
   size_t len = end - begin;
 
-  if (s->verbose) LOG(INFO) << "len: " << len << "\n";
+  if (s->verbose) LOG(INFO) << "len: " << len << std::endl;
 
   std::vector<uint8_t> img_bytes(len);
   file.seekg(0, std::ios::beg);
@@ -100,7 +100,7 @@ std::vector<uint8_t> read_bmp(const std::string& input_bmp_name, int* width,
 
   if (s->verbose)
     LOG(INFO) << "width, height, channels: " << *width << ", " << *height
-              << ", " << *channels << "\n";
+              << ", " << *channels << std::endl;
 
   // there may be padding bytes when the width is not a multiple of 4 bytes
   // 8 * channels == bits per pixel
