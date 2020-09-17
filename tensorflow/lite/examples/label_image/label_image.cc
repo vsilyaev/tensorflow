@@ -98,7 +98,7 @@ class DelegateProviders {
       // It's possible that a delegate of certain type won't be created as
       // user-specified benchmark params tells not to.
       if (ptr == nullptr) continue;
-      LOG(INFO) << delegate->GetName() << " delegate created.\n";
+      LOG(INFO) << delegate->GetName() << " delegate created." << std::endl;
       delegates_map.emplace(delegate->GetName(), std::move(ptr));
     }
     return delegates_map;
@@ -134,7 +134,8 @@ TfLiteDelegatePtrMap GetDelegates(Settings* s,
   if (s->gl_backend) {
     auto delegate = CreateGPUDelegate(s);
     if (!delegate) {
-      LOG(INFO) << "GPU acceleration is unsupported on this platform.\n";
+      LOG(INFO) << "GPU acceleration is unsupported on this platform."
+                << std::endl;
     } else {
       delegates.emplace("GPU", std::move(delegate));
     }
@@ -145,7 +146,8 @@ TfLiteDelegatePtrMap GetDelegates(Settings* s,
     options.allow_fp16 = s->allow_fp16;
     auto delegate = evaluation::CreateNNAPIDelegate(options);
     if (!delegate) {
-      LOG(INFO) << "NNAPI acceleration is unsupported on this platform.\n";
+      LOG(INFO) << "NNAPI acceleration is unsupported on this platform."
+                << std::endl;
     } else {
       delegates.emplace("NNAPI", std::move(delegate));
     }
@@ -157,7 +159,8 @@ TfLiteDelegatePtrMap GetDelegates(Settings* s,
         evaluation::CreateHexagonDelegate(libhexagon_path, s->profiling);
 
     if (!delegate) {
-      LOG(INFO) << "Hexagon acceleration is unsupported on this platform.\n";
+      LOG(INFO) << "Hexagon acceleration is unsupported on this platform."
+                << std::endl;
     } else {
       delegates.emplace("Hexagon", std::move(delegate));
     }
@@ -166,7 +169,8 @@ TfLiteDelegatePtrMap GetDelegates(Settings* s,
   if (s->xnnpack_delegate) {
     auto delegate = evaluation::CreateXNNPACKDelegate(s->number_of_threads);
     if (!delegate) {
-      LOG(INFO) << "XNNPACK acceleration is unsupported on this platform.\n";
+      LOG(INFO) << "XNNPACK acceleration is unsupported on this platform."
+                << std::endl;
     } else {
       delegates.emplace("XNNPACK", std::move(delegate));
     }
@@ -195,7 +199,7 @@ TfLiteStatus ReadLabelsFile(const string& file_name,
                             size_t* found_label_count) {
   std::ifstream file(file_name);
   if (!file) {
-    LOG(ERROR) << "Labels file " << file_name << " not found\n";
+    LOG(ERROR) << "Labels file " << file_name << " not found" << std::endl;
     return kTfLiteError;
   }
   result->clear();
@@ -226,13 +230,13 @@ void PrintProfilingInfo(const profiling::ProfileEvent* e,
             << std::setprecision(3) << registration.builtin_code << ", "
             << EnumNameBuiltinOperator(
                    static_cast<BuiltinOperator>(registration.builtin_code))
-            << "\n";
+            << std::endl;
 }
 
 void RunInference(Settings* settings,
                   const DelegateProviders& delegate_providers) {
   if (!settings->model_name.c_str()) {
-    LOG(ERROR) << "no model file name\n";
+    LOG(ERROR) << "no model file name" << std::endl;
     exit(-1);
   }
 
@@ -240,29 +244,29 @@ void RunInference(Settings* settings,
   std::unique_ptr<tflite::Interpreter> interpreter;
   model = tflite::FlatBufferModel::BuildFromFile(settings->model_name.c_str());
   if (!model) {
-    LOG(ERROR) << "\nFailed to mmap model " << settings->model_name << "\n";
+    LOG(ERROR) << "\nFailed to mmap model " << settings->model_name << std::endl;
     exit(-1);
   }
   settings->model = model.get();
-  LOG(INFO) << "Loaded model " << settings->model_name << "\n";
+  LOG(INFO) << "Loaded model " << settings->model_name << std::endl;
   model->error_reporter();
-  LOG(INFO) << "resolved reporter\n";
+  LOG(INFO) << "resolved reporter" << std::endl;
 
   tflite::ops::builtin::BuiltinOpResolver resolver;
 
   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
   if (!interpreter) {
-    LOG(ERROR) << "Failed to construct interpreter\n";
+    LOG(ERROR) << "Failed to construct interpreter" << std::endl;
     exit(-1);
   }
 
   interpreter->SetAllowFp16PrecisionForFp32(settings->allow_fp16);
 
   if (settings->verbose) {
-    LOG(INFO) << "tensors size: " << interpreter->tensors_size() << "\n";
-    LOG(INFO) << "nodes size: " << interpreter->nodes_size() << "\n";
-    LOG(INFO) << "inputs: " << interpreter->inputs().size() << "\n";
-    LOG(INFO) << "input(0) name: " << interpreter->GetInputName(0) << "\n";
+    LOG(INFO) << "tensors size: " << interpreter->tensors_size() << std::endl;
+    LOG(INFO) << "nodes size: " << interpreter->nodes_size() << std::endl;
+    LOG(INFO) << "inputs: " << interpreter->inputs().size() << std::endl;
+    LOG(INFO) << "input(0) name: " << interpreter->GetInputName(0) << std::endl;
 
     int t_size = interpreter->tensors_size();
     for (int i = 0; i < t_size; i++) {
@@ -271,7 +275,7 @@ void RunInference(Settings* settings,
                   << interpreter->tensor(i)->bytes << ", "
                   << interpreter->tensor(i)->type << ", "
                   << interpreter->tensor(i)->params.scale << ", "
-                  << interpreter->tensor(i)->params.zero_point << "\n";
+                  << interpreter->tensor(i)->params.zero_point << std::endl;
     }
   }
 
@@ -286,29 +290,30 @@ void RunInference(Settings* settings,
                                      &image_height, &image_channels, settings);
 
   int input = interpreter->inputs()[0];
-  if (settings->verbose) LOG(INFO) << "input: " << input << "\n";
+  if (settings->verbose) LOG(INFO) << "input: " << input << std::endl;
 
   const std::vector<int> inputs = interpreter->inputs();
   const std::vector<int> outputs = interpreter->outputs();
 
   if (settings->verbose) {
-    LOG(INFO) << "number of inputs: " << inputs.size() << "\n";
-    LOG(INFO) << "number of outputs: " << outputs.size() << "\n";
+    LOG(INFO) << "number of inputs: " << inputs.size() << std::endl;
+    LOG(INFO) << "number of outputs: " << outputs.size() << std::endl;
   }
 
   auto delegates_ = GetDelegates(settings, delegate_providers);
   for (const auto& delegate : delegates_) {
     if (interpreter->ModifyGraphWithDelegate(delegate.second.get()) !=
         kTfLiteOk) {
-      LOG(ERROR) << "Failed to apply " << delegate.first << " delegate.\n";
+      LOG(ERROR) << "Failed to apply " << delegate.first << " delegate."
+                 << std::endl;
       exit(-1);
     } else {
-      LOG(INFO) << "Applied " << delegate.first << " delegate.\n";
+      LOG(INFO) << "Applied " << delegate.first << " delegate." << std::endl;
     }
   }
 
   if (interpreter->AllocateTensors() != kTfLiteOk) {
-    LOG(ERROR) << "Failed to allocate tensors!\n";
+    LOG(ERROR) << "Failed to allocate tensors!" << std::endl;
     exit(-1);
   }
 
@@ -340,7 +345,7 @@ void RunInference(Settings* settings,
       break;
     default:
       LOG(ERROR) << "cannot handle input type "
-                 << interpreter->tensor(input)->type << " yet\n";
+                 << interpreter->tensor(input)->type << " yet" << std::endl;
       exit(-1);
   }
   auto profiler = absl::make_unique<profiling::Profiler>(
@@ -351,7 +356,7 @@ void RunInference(Settings* settings,
   if (settings->loop_count > 1) {
     for (int i = 0; i < settings->number_of_warmup_runs; i++) {
       if (interpreter->Invoke() != kTfLiteOk) {
-        LOG(ERROR) << "Failed to invoke tflite!\n";
+        LOG(ERROR) << "Failed to invoke tflite!" << std::endl;
         exit(-1);
       }
     }
@@ -361,16 +366,16 @@ void RunInference(Settings* settings,
   gettimeofday(&start_time, nullptr);
   for (int i = 0; i < settings->loop_count; i++) {
     if (interpreter->Invoke() != kTfLiteOk) {
-      LOG(ERROR) << "Failed to invoke tflite!\n";
+      LOG(ERROR) << "Failed to invoke tflite!" << std::endl;
       exit(-1);
     }
   }
   gettimeofday(&stop_time, nullptr);
-  LOG(INFO) << "invoked\n";
+  LOG(INFO) << "invoked" << std::endl;
   LOG(INFO) << "average time: "
             << (get_us(stop_time) - get_us(start_time)) /
                    (settings->loop_count * 1000)
-            << " ms \n";
+            << " ms" << std::endl;
 
   if (settings->profiling) {
     profiler->StopProfiling();
@@ -413,7 +418,7 @@ void RunInference(Settings* settings,
       break;
     default:
       LOG(ERROR) << "cannot handle output type "
-                 << interpreter->tensor(output)->type << " yet\n";
+                 << interpreter->tensor(output)->type << " yet" << std::endl;
       exit(-1);
   }
 
@@ -427,7 +432,8 @@ void RunInference(Settings* settings,
   for (const auto& result : top_results) {
     const float confidence = result.first;
     const int index = result.second;
-    LOG(INFO) << confidence << ": " << index << " " << labels[index] << "\n";
+    LOG(INFO) << confidence << ": " << index << " " << labels[index]
+              << std::endl;
   }
 }
 
@@ -450,7 +456,7 @@ void display_usage() {
       << "--verbose, -v: [0|1] print more information\n"
       << "--warmup_runs, -w: number of warmup runs\n"
       << "--xnnpack_delegate, -x [0:1]: xnnpack delegate\n"
-      << "\n";
+      << std::endl;
 }
 
 int Main(int argc, char** argv) {
