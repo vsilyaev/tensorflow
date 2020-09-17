@@ -16,6 +16,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_EXAMPLES_LABEL_IMAGE_LABEL_IMAGE_H_
 #define TENSORFLOW_LITE_EXAMPLES_LABEL_IMAGE_LABEL_IMAGE_H_
 
+#include <iostream>
+
 #include "tensorflow/lite/model.h"
 #include "tensorflow/lite/string_type.h"
 
@@ -43,6 +45,20 @@ struct Settings {
   int max_profiling_buffer_entries = 1024;
   int number_of_warmup_runs = 2;
 };
+
+class Logger {
+  std::stringstream stream_;
+public:
+  Logger(const char *severity) {
+      stream_ << severity << ": ";
+  }
+  std::stringstream& Stream() { return stream_; }
+  ~Logger() {
+    std::cerr << stream_.str() << std::endl;
+  }
+};
+
+#define LOG(severity) tflite::label_image::Logger(#severity).Stream()
 
 }  // namespace label_image
 }  // namespace tflite
