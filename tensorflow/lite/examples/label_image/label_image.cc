@@ -126,7 +126,7 @@ TfLiteStatus ReadLabelsFile(const string& file_name,
                             size_t* found_label_count) {
   std::ifstream file(file_name);
   if (!file) {
-    LOG(FATAL) << "Labels file " << file_name << " not found\n";
+    LOG(FATAL) << "Labels file " << file_name << " not found" << std::endl;
     return kTfLiteError;
   }
   result->clear();
